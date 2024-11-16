@@ -7,26 +7,70 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert"
 import { Loader2 } from 'lucide-react'
 
-const inclusiveReplacements: { [key: string]: string } = {
-  'guys': 'everyone',
-  'kill': 'stop',
-  'crazy': 'intense',
-  'insane': 'incredible',
-  'man hours': 'person hours',
-  'manpower': 'workforce',
-  'chairman': 'chairperson',
-  'mailman': 'mail carrier',
-  'policeman': 'police officer',
-  'fireman': 'firefighter',
-  'stewardess': 'flight attendant',
-  'mankind': 'humankind',
-  'manned': 'staffed',
-  'master': 'primary',
-  'slave': 'secondary',
-  'blacklist': 'blocklist',
-  'whitelist': 'allowlist',
-  'blind spot': 'unseen area',
-  'grandfathered': 'legacy status',
+const inclusiveReplacements = {
+  en: {
+    'guys': 'everyone',
+    'kill': 'stop',
+    'crazy': 'intense',
+    'insane': 'incredible',
+    'man hours': 'person hours',
+    'manpower': 'workforce',
+    'chairman': 'chairperson',
+    'mailman': 'mail carrier',
+    'policeman': 'police officer',
+    'fireman': 'firefighter',
+    'stewardess': 'flight attendant',
+    'mankind': 'humankind',
+    'manned': 'staffed',
+    'master': 'primary',
+    'slave': 'secondary',
+    'blacklist': 'blocklist',
+    'whitelist': 'allowlist',
+    'blind spot': 'unseen area',
+    'grandfathered': 'legacy status',
+  },
+  es: {
+    'chicos': 'todos',
+    'matar': 'detener',
+    'loco': 'intenso',
+    'insano': 'increíble',
+    'horas hombre': 'horas persona',
+    'mano de obra': 'fuerza laboral',
+    'presidente': 'presidenta',
+    'cartero': 'cartera',
+    'policía': 'oficial de policía',
+    'bombero': 'bombera',
+    'azafata': 'asistente de vuelo',
+    'humanidad': 'humanidad',
+    'tripulado': 'tripulada',
+    'maestro': 'primario',
+    'esclavo': 'secundario',
+    'lista negra': 'lista de bloqueo',
+    'lista blanca': 'lista de permitidos',
+    'punto ciego': 'área no vista',
+    'abuelo': 'estado heredado',
+  },
+  fr: {
+    'les gars': 'tout le monde',
+    'tuer': 'arrêter',
+    'fou': 'intense',
+    'insensé': 'incroyable',
+    'heures homme': 'heures personne',
+    'main-d\'œuvre': 'effectif',
+    'président': 'présidente',
+    'facteur': 'factrice',
+    'policier': 'agent de police',
+    'pompier': 'sapeur-pompier',
+    'hôtesse de l\'air': 'agent de bord',
+    'humanité': 'humanité',
+    'habité': 'occupé',
+    'maître': 'principal',
+    'esclave': 'secondaire',
+    'liste noire': 'liste de blocage',
+    'liste blanche': 'liste d\'autorisation',
+    'angle mort': 'zone non visible',
+    'grand-père': 'statut hérité',
+  }
 }
 
 function matchCase(text: string, pattern: string) {
@@ -49,6 +93,7 @@ export default function InclusivityChecker() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [inclusivityScore, setInclusivityScore] = useState<number | null>(null)
+  const [language, setLanguage] = useState('en')
 
   const checkInclusivity = useCallback(() => {
     setIsLoading(true)
@@ -59,13 +104,15 @@ export default function InclusivityChecker() {
       let modifiedText = inputText
       let nonInclusiveCount = 0
 
+      const replacements = inclusiveReplacements[language]
+
       // Split inputText into words for processing
       const words = inputText.split(/\b/)
 
       // Iterate over each word in the input
       modifiedText = words.map((word) => {
         // Check if the word needs to be replaced
-        const replacement = inclusiveReplacements[word.toLowerCase()]
+        const replacement = replacements[word.toLowerCase()]
 
         if (replacement) {
           nonInclusiveCount++
@@ -88,7 +135,7 @@ export default function InclusivityChecker() {
     } finally {
       setIsLoading(false)
     }
-  }, [inputText])
+  }, [inputText, language])
 
   const getScoreColor = (score: number | null) => {
     if (score === null) return 'text-gray-500'
@@ -101,6 +148,17 @@ export default function InclusivityChecker() {
     <div className="container mx-auto p-4 max-w-2xl">
       <div className="flex justify-center mb-4">
         <Image src="/logo.jpg" alt="Logo" width={150} height={150} />
+      </div>
+      <div className="flex justify-center mb-4">
+        <select
+          value={language}
+          onChange={(e) => setLanguage(e.target.value)}
+          className="border rounded-md p-2 text-black"
+        >
+          <option value="en" className="text-black">English</option>
+          <option value="es" className="text-black">Spanish</option>
+          <option value="fr" className="text-black">French</option>
+        </select>
       </div>
       <Card>
         <CardHeader>
@@ -141,7 +199,7 @@ export default function InclusivityChecker() {
           {outputText && (
             <div className="mt-4">
               <h3 className="text-lg font-semibold mb-2">Suggested Inclusive Version:</h3>
-              <p className="text-sm text-white">{outputText}</p>
+              <p className="text-sm text-white whitespace-pre-wrap">{outputText}</p>
             </div>
           )}
         </CardFooter>
