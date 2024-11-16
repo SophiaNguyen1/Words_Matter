@@ -7,10 +7,9 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert"
 import { Loader2 } from 'lucide-react'
 
-// Replace this with your actual OpenAI API key
-const OPENAI_API_KEY = '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'
+// Replace this with your actual Hugging Face API key
+const HUGGINGFACE_API_KEY = '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'
 
-// Common problematic terms and their inclusive alternatives
 const inclusiveReplacements: { [key: string]: string } = {
   'guys': 'everyone',
   'kill': 'stop',
@@ -51,34 +50,29 @@ export default function InclusivityChecker() {
         modifiedText = modifiedText.replace(regex, replacement)
       })
 
-      // Then, use AI to further improve inclusivity
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      // Then, use Hugging Face Inference API to further improve inclusivity
+      const response = await fetch('https://api-inference.huggingface.co/models/facebook/bart-large-cnn', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENAI_API_KEY}`
+          'Authorization': `Bearer ${HUGGINGFACE_API_KEY}`
         },
         body: JSON.stringify({
-          model: "gpt-3.5-turbo",
-          messages: [
-            {
-              role: "system",
-              content: "You are an AI assistant that helps make workplace communication more inclusive. Identify and suggest alternatives for any remaining non-inclusive language, focusing on gender-neutral terms and avoiding ableist, racist, or otherwise exclusionary language. Provide an improved version of the input text."
-            },
-            {
-              role: "user",
-              content: modifiedText
-            }
-          ]
+          inputs: modifiedText,
+          parameters: {
+            max_length: 500,
+            min_length: 100,
+            do_sample: false
+          }
         })
       })
 
       if (!response.ok) {
-        throw new Error('Failed to fetch response from OpenAI')
+        throw new Error('Failed to fetch response from Hugging Face')
       }
 
       const data = await response.json()
-      setOutputText(data.choices[0].message.content)
+      setOutputText(data[0].summary_text)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred')
     } finally {
@@ -122,7 +116,7 @@ export default function InclusivityChecker() {
           {outputText && (
             <div className="mt-4">
               <h3 className="text-lg font-semibold mb-2">Suggested Inclusive Version:</h3>
-              <p className="text-sm text-gray-600">{outputText}</p>
+              <p className="text-sm text-white">{outputText}</p>
             </div>
           )}
         </CardFooter>
