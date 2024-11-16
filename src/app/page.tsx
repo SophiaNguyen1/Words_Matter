@@ -6,6 +6,12 @@ import { Textarea } from "@/app/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/app/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert"
 import { Loader2 } from 'lucide-react'
+import { CohereClient } from "cohere-ai";
+import { useEffect } from "react";
+
+const cohere = new CohereClient({
+  token: "OEegKX6elGUR9vkFvW3CRcRCMMJj9fag149lJSul",
+});
 
 type Language = 'en' | 'es' | 'fr';
 
@@ -97,6 +103,11 @@ export default function InclusivityChecker() {
   const [inclusivityScore, setInclusivityScore] = useState<number | null>(null)
   const [language, setLanguage] = useState('en')
 
+  const [promptText, setPromptText] = useState('');
+  const [cohereResponse, setCohereResponse] = useState('');
+  const [isCohereLoading, setIsCohereLoading] = useState(false);
+  const [cohereError, setCohereError] = useState<string | null>(null);
+
   const checkInclusivity = useCallback(() => {
     setIsLoading(true)
     setError(null)
@@ -137,6 +148,29 @@ export default function InclusivityChecker() {
       setIsLoading(false)
     }
   }, [inputText, language])
+
+  const handleCoherePrompt = async () => {
+    setIsCohereLoading(true);
+    setCohereError(null);
+    setCohereResponse('');
+
+    try {
+      const response = await cohere.chat({
+          model: "command",
+          message: promptText,
+      });
+
+      if (response && response.text) {
+        setCohereResponse(response.text.trim());
+      } else {
+        setCohereError('Unexpected API response format.');
+      }
+    } catch (err) {
+      setCohereError(err instanceof Error ? err.message : 'An error occurred with the Cohere API.');
+    } finally {
+      setIsCohereLoading(false);
+    }
+  };
 
   const getScoreColor = (score: number | null) => {
     if (score === null) return 'text-gray-500'
@@ -184,6 +218,31 @@ export default function InclusivityChecker() {
               'Check Inclusivity'
             )}
           </Button>
+        </CardContent>
+        <CardContent>
+          <Textarea
+            placeholder="Enter your prompt to generate an inclusive text on a topic of your choice..."
+            value={promptText}
+            onChange={(e) => setPromptText(e.target.value)}
+            rows={3}
+            className="mb-4"
+          />
+          <Button onClick={handleCoherePrompt} disabled={isCohereLoading || promptText.trim() === ''}>
+            {isCohereLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Generating...
+              </>
+            ) : (
+              'Generate Response'
+            )}
+          </Button>
+          {cohereResponse && (
+            <div className="mt-4">
+              <h3 className="text-lg font-semibold mb-2">Generated Response:</h3>
+              <p className="text-sm text-white whitespace-pre-wrap">{cohereResponse}</p>
+            </div>
+          )}
         </CardContent>
         <CardFooter className="flex flex-col items-start">
           {error && (
