@@ -1,14 +1,10 @@
 'use client'
-
 import { useState, useCallback } from 'react'
 import { Button } from "@/app/components/ui/button"
 import { Textarea } from "@/app/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/app/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert"
 import { Loader2 } from 'lucide-react'
-
-// Replace this with your actual Hugging Face API key
-const HUGGINGFACE_API_KEY = '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'
 
 const inclusiveReplacements: { [key: string]: string } = {
   'guys': 'everyone',
@@ -32,53 +28,72 @@ const inclusiveReplacements: { [key: string]: string } = {
   'grandfathered': 'legacy status',
 }
 
+function matchCase(text: string, pattern: string) {
+  let result = ''
+  for (let i = 0; i < text.length; i++) {
+    const char = text.charAt(i)
+    const patternChar = pattern.charAt(i)
+    if (patternChar === patternChar.toUpperCase()) {
+      result += char.toUpperCase()
+    } else {
+      result += char.toLowerCase()
+    }
+  }
+  return result
+}
+
 export default function InclusivityChecker() {
   const [inputText, setInputText] = useState('')
   const [outputText, setOutputText] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [inclusivityScore, setInclusivityScore] = useState<number | null>(null)
 
-  const checkInclusivity = useCallback(async () => {
+  const checkInclusivity = useCallback(() => {
     setIsLoading(true)
     setError(null)
+    setInclusivityScore(null)
 
     try {
-      // First, apply predefined replacements
-      let modifiedText = inputText.toLowerCase()
-      Object.entries(inclusiveReplacements).forEach(([term, replacement]) => {
-        const regex = new RegExp(`\\b${term}\\b`, 'gi')
-        modifiedText = modifiedText.replace(regex, replacement)
-      })
+      let modifiedText = inputText
+      let nonInclusiveCount = 0
 
-      // Then, use Hugging Face Inference API to further improve inclusivity
-      const response = await fetch('https://api-inference.huggingface.co/models/facebook/bart-large-cnn', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${HUGGINGFACE_API_KEY}`
-        },
-        body: JSON.stringify({
-          inputs: modifiedText,
-          parameters: {
-            max_length: 500,
-            min_length: 100,
-            do_sample: false
-          }
-        })
-      })
+      // Split inputText into words for processing
+      const words = inputText.split(/\b/)
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch response from Hugging Face')
-      }
+      // Iterate over each word in the input
+      modifiedText = words.map((word) => {
+        // Check if the word needs to be replaced
+        const replacement = inclusiveReplacements[word.toLowerCase()]
 
-      const data = await response.json()
-      setOutputText(data[0].summary_text)
+        if (replacement) {
+          // If replacement exists, use the replacement word
+          return replacement
+        } else {
+          // If no replacement, preserve the case of the word using matchCase
+          return matchCase(word, word)
+        }
+      }).join('')
+
+      // Calculate inclusivity score
+      const totalWords = words.length
+      const score = Math.max(0, 100 - (nonInclusiveCount / totalWords) * 100)
+      setInclusivityScore(score)
+
+      setOutputText(modifiedText)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred')
     } finally {
       setIsLoading(false)
     }
   }, [inputText])
+
+  const getScoreColor = (score: number | null) => {
+    if (score === null) return 'text-gray-500'
+    if (score >= 80) return 'text-green-500'
+    if (score >= 50) return 'text-yellow-500'
+    return 'text-red-500'
+  }
 
   return (
     <div className="container mx-auto p-4 max-w-2xl">
@@ -112,6 +127,11 @@ export default function InclusivityChecker() {
               <AlertTitle>Error</AlertTitle>
               <AlertDescription>{error}</AlertDescription>
             </Alert>
+          )}
+          {inclusivityScore !== null && (
+            <div className={`mt-4 text-lg font-semibold ${getScoreColor(inclusivityScore)}`}>
+              Inclusivity Score: {inclusivityScore.toFixed(2)} / 100
+            </div>
           )}
           {outputText && (
             <div className="mt-4">
