@@ -1,5 +1,6 @@
 'use client'
 import { useState, useCallback } from 'react'
+import Image from 'next/image'
 import { Button } from "@/app/components/ui/button"
 import { Textarea } from "@/app/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/app/components/ui/card"
@@ -98,6 +99,9 @@ export default function InclusivityChecker() {
 
   return (
     <div className="container mx-auto p-4 max-w-2xl">
+      <div className="flex justify-center mb-4">
+        <Image src="/logo.jpg" alt="Logo" width={150} height={150} />
+      </div>
       <Card>
         <CardHeader>
           <CardTitle>Workplace Inclusivity Checker</CardTitle>
