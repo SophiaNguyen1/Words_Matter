@@ -67,6 +67,7 @@ export default function InclusivityChecker() {
         const replacement = inclusiveReplacements[word.toLowerCase()]
 
         if (replacement) {
+          nonInclusiveCount++
           // If replacement exists, use the replacement word
           return replacement
         } else {
@@ -76,8 +77,8 @@ export default function InclusivityChecker() {
       }).join('')
 
       // Calculate inclusivity score
-      const totalWords = words.length
-      const score = Math.max(0, 100 - (nonInclusiveCount / totalWords) * 100)
+      const totalWords = words.filter(word => word.trim()).length // Count actual words (ignore spaces and punctuation)
+      const score = totalWords === 0 ? 0 : Math.max(0, 100 - (nonInclusiveCount / totalWords) * 100)
       setInclusivityScore(score)
 
       setOutputText(modifiedText)
