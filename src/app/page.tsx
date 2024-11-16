@@ -7,7 +7,9 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert"
 import { Loader2 } from 'lucide-react'
 
-const inclusiveReplacements = {
+type Language = 'en' | 'es' | 'fr';
+
+const inclusiveReplacements: Record<Language, Record<string, string>> = {
   en: {
     'guys': 'everyone',
     'kill': 'stop',
@@ -103,8 +105,7 @@ export default function InclusivityChecker() {
     try {
       let modifiedText = inputText
       let nonInclusiveCount = 0
-
-      const replacements = inclusiveReplacements[language]
+      const replacements = inclusiveReplacements[language as Language]
 
       // Split inputText into words for processing
       const words = inputText.split(/\b/)
